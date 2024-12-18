@@ -24,6 +24,7 @@ resharper_csharp_alignment_tab_fill_style = use_tabs_only
 resharper_csharp_indent_size = 1
 resharper_csharp_insert_final_newline = true
 resharper_csharp_int_align_fix_in_adjacent = false
+resharper_indent_raw_literal_string = indent
 resharper_keep_existing_invocation_parens_arrangement = false
 resharper_wrap_after_invocation_lpar = false
 resharper_wrap_before_primary_constructor_declaration_lpar = true

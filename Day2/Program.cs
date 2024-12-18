@@ -23,9 +23,8 @@ public class Program
 			.Select(level => new LinkedList<int>(level))
 			.Count(report => IsSafe(report.EnumerateNodes())
 				|| Enumerable.Range(0, report.Count)
-					.Any(indexToFilter => IsSafe(
-						new LinkedList<int>(report.Where((_, reportIndex) => indexToFilter != reportIndex))
-							.EnumerateNodes())));
+					.Any(indexToFilter => IsSafe(new LinkedList<int>(report.Where((_, reportIndex) => indexToFilter != reportIndex))
+						.EnumerateNodes())));
 	}
 
 	private static bool IsSafe(IEnumerable<LinkedListNode<int>> report)

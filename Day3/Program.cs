@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 internal partial class Program
 {
-	const string firstNumber = nameof(firstNumber);
-	const string secondNumber = nameof(secondNumber);
-	const string multiply = nameof(multiply);
-	const string idle = nameof(idle);
+	private const string firstNumber = nameof(firstNumber);
+	private const string secondNumber = nameof(secondNumber);
+	private const string multiply = nameof(multiply);
+	private const string idle = nameof(idle);
 
 	[GeneratedRegex(
 		$@"mul\((?<{firstNumber}>\d{{1,3}}),(?<{secondNumber}>\d{{1,3}})\)|(?<{multiply}>do\(\))|(?<{idle}>don't\(\))")]

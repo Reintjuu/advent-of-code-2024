@@ -2,14 +2,22 @@
 
 public class Program
 {
+	private static readonly Dictionary<char, char> _nextDirectionMap = new()
+	{
+		['^'] = '>',
+		['>'] = 'v',
+		['v'] = '<',
+		['<'] = '^'
+	};
+
 	public static async Task Main(string[] args)
 	{
 		var input = await File.ReadAllTextAsync("../../../input");
 
-		Console.WriteLine(Result(input));
+		WalkGuardAndDetermineUniquePositionsAndLoops(input);
 	}
 
-	public static int Result(string input)
+	public static void WalkGuardAndDetermineUniquePositionsAndLoops(string input)
 	{
 		string[] rowContent = input.Trim().Split('\n');
 
@@ -17,27 +25,48 @@ public class Program
 		var columns = rowContent[0].Length;
 		var grid = new char[rows, columns];
 
-		(int y, int x) currentGuardPosition = (0, 0);
+		(int y, int x) startingGuardPosition = (0, 0);
 		for (var y = 0; y < rows; y++)
 		{
 			for (var x = 0; x < columns; x++)
 			{
 				if (rowContent[y][x] == '^')
 				{
-					currentGuardPosition = (y, x);
+					startingGuardPosition = (y, x);
 				}
 
 				grid[y, x] = rowContent[y][x];
 			}
 		}
 
-		Dictionary<char, char> nextDirectionMap = new()
+		var gridWithNoObstacles = (char[,])grid.Clone();
+		Console.WriteLine(
+			$"Total distinct positions for original grid: {WalkGuard(gridWithNoObstacles, rows, columns, startingGuardPosition).totalDistinctPositions}");
+
+		var loops = 0;
+		for (int y = 0; y < rows; y++)
 		{
-			['^'] = '>',
-			['>'] = 'v',
-			['v'] = '<',
-			['<'] = '^'
-		};
+			for (int x = 0; x < columns; x++)
+			{
+				if (grid[y, x] == '.')
+				{
+					var copy = (char[,])grid.Clone();
+					copy[y, x] = 'O';
+					if (WalkGuard(copy, rows, columns, startingGuardPosition).isLoop)
+					{
+						loops++;
+					}
+				}
+			}
+		}
+
+		Console.WriteLine($"Unique obstacle places to get guard in a loop: {loops}");
+	}
+
+	private static (int totalDistinctPositions, bool isLoop) WalkGuard(
+		char[,] grid, int rows, int columns, (int y, int x) currentGuardPosition)
+	{
+		HashSet<((int y, int x), char direction)> visited = [];
 
 		var totalDistinctPositions = 0;
 		while (true)
@@ -68,8 +97,8 @@ public class Program
 			switch (tileContent)
 			{
 				// Box
-				case '#':
-					grid[currentGuardPosition.y, currentGuardPosition.x] = nextDirectionMap[currentGuardDirection];
+				case '#' or 'O':
+					grid[currentGuardPosition.y, currentGuardPosition.x] = _nextDirectionMap[currentGuardDirection];
 					continue;
 				case '.':
 					totalDistinctPositions++;
@@ -80,10 +109,16 @@ public class Program
 			grid[newGuardPosition.y, newGuardPosition.x] = currentGuardDirection;
 			currentGuardPosition = newGuardPosition;
 
-			ShowGrid(grid, rows, columns);
+			var visitInfo = (currentGuardPosition, currentGuardDirection);
+			if (!visited.Add(visitInfo))
+			{
+				return (totalDistinctPositions, isLoop: true);
+			}
+
+			// ShowGrid(grid, rows, columns);
 		}
 
-		return totalDistinctPositions;
+		return (totalDistinctPositions, isLoop: false);
 	}
 
 	private static void ShowGrid(char[,] grid, int rows, int columns)

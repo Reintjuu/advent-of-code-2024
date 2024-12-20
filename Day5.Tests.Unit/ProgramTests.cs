@@ -35,6 +35,6 @@ public class ProgramTests
 		""")]
 	public void Test1(string input)
 	{
-		Assert.Equal(143, Program.DetermineCorrectPageOrdering(input));
+		Assert.Equal((correct: 143, incorrect: 123), Program.DetermineCorrectPageOrdering(input));
 	}
 }

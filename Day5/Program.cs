@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Day5;
+using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,7 +14,7 @@ public class Program
 		Console.WriteLine(DetermineCorrectPageOrdering(input));
 	}
 
-	public static int DetermineCorrectPageOrdering(string input)
+	public static (int correct, int incorrect) DetermineCorrectPageOrdering(string input)
 	{
 		var rulesAndPagesToProduce = input
 			.Trim()
@@ -24,46 +26,78 @@ public class Program
 		var pagesToProduceInEachUpdate = rulesAndPagesToProduce
 			.Last()
 			.Split('\n')
-			.Select(values => values.Split(',').Select(int.Parse));
+			.Select(values => values
+				.Split(',')
+				.Select(int.Parse)
+				.ToArray())
+			.ToArray();
 
-		return pagesToProduceInEachUpdate.Sum(pagesToProduce =>
-		{
-			var relevantRules = pageOrderingRules
-				.Where(pageOrderingRule => pageOrderingRule
-					.All(rule => pagesToProduce.Any(pageToProduce => pageToProduce == rule)))
-				.ToList();
+		var pagesToProduceAccordingToRules = pagesToProduceInEachUpdate
+			.Where(pagesToProduce => AllAccordingToRules(pagesToProduce, pageOrderingRules))
+			.ToArray();
 
-			var enumeratedPagesToProduce = pagesToProduce.ToArray();
-			var allAccordingToRules = enumeratedPagesToProduce
-				.Select((basePage, i) => enumeratedPagesToProduce
-					.Select((pageToCheck, j) =>
+		var pagesNotAccordingToRules = pagesToProduceInEachUpdate
+			.Except(pagesToProduceAccordingToRules)
+			.Select(pagesToSort =>
+			{
+				var relevantRules = GetRelevantRules(pageOrderingRules, pagesToSort).ToArray();
+				PageComparer pageComparer = new(relevantRules);
+
+				return pagesToSort.Order(pageComparer).ToArray();
+			})
+			.ToArray();
+
+
+		return (
+			correct: pagesToProduceAccordingToRules.Sum(result => result[result.Length / 2]),
+			incorrect: pagesNotAccordingToRules.Sum(result => result[result.Length / 2]));
+	}
+
+	private static bool AllAccordingToRules(
+		int[] pagesToProduce,
+		IEnumerable<IEnumerable<int>> pageOrderingRules)
+	{
+		var enumeratedPagesToProduce = pagesToProduce.ToArray();
+		var relevantRules = GetRelevantRules(pageOrderingRules, enumeratedPagesToProduce).ToArray();
+
+		var allAccordingToRules = enumeratedPagesToProduce
+			.Select((basePage, i) => enumeratedPagesToProduce
+				.Select((pageToCheck, j) =>
+				{
+					if (i == j)
 					{
-						if (i == j)
-						{
-							return true;
-						}
+						return true;
+					}
 
-						var relevantRule = relevantRules
-							.SingleOrDefault(pageOrderingRule =>
-								pageOrderingRule.All(rule => rule == basePage || rule == pageToCheck))
-							?
-							.ToArray();
+					var relevantRule = relevantRules
+						.SingleOrDefault(pageOrderingRule =>
+							pageOrderingRule.All(rule => rule == basePage || rule == pageToCheck))
+						?
+						.ToArray();
 
-						if (relevantRule == null)
-						{
-							return true;
-						}
+					if (relevantRule == null)
+					{
+						return true;
+					}
 
-						var left = relevantRule.First();
-						var right = relevantRule.Last();
+					var left = relevantRule.First();
+					var right = relevantRule.Last();
 
-						return (i < j && basePage == left && pageToCheck == right)
-							|| (j < i && basePage == right && pageToCheck == left);
-					})
-					.All(isAccordingToRules => isAccordingToRules))
-				.All(areAccordingToRules => areAccordingToRules);
+					return (i < j && basePage == left && pageToCheck == right)
+						|| (j < i && basePage == right && pageToCheck == left);
+				})
+				.All(isAccordingToRules => isAccordingToRules))
+			.All(areAccordingToRules => areAccordingToRules);
 
-			return allAccordingToRules ? enumeratedPagesToProduce[enumeratedPagesToProduce.Length / 2] : 0;
-		});
+		return allAccordingToRules;
+	}
+
+	private static IEnumerable<IEnumerable<int>> GetRelevantRules(
+		IEnumerable<IEnumerable<int>> pageOrderingRules,
+		int[] pagesToProduce)
+	{
+		return pageOrderingRules
+			.Where(pageOrderingRule => pageOrderingRule
+				.All(rule => pagesToProduce.Any(pageToProduce => pageToProduce == rule)));
 	}
 }

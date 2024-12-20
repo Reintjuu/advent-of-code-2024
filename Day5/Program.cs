@@ -1,6 +1,5 @@
 ﻿using Day5;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -22,7 +21,9 @@ public class Program
 		var pageOrderingRules = rulesAndPagesToProduce
 			.First()
 			.Split('\n')
-			.Select(values => values.Split('|').Select(int.Parse));
+			.Select(values => values
+				.Split('|')
+				.Select(int.Parse));
 		var pagesToProduceInEachUpdate = rulesAndPagesToProduce
 			.Last()
 			.Split('\n')
@@ -32,72 +33,25 @@ public class Program
 				.ToArray())
 			.ToArray();
 
-		var pagesToProduceAccordingToRules = pagesToProduceInEachUpdate
-			.Where(pagesToProduce => AllAccordingToRules(pagesToProduce, pageOrderingRules))
-			.ToArray();
-
-		var pagesNotAccordingToRules = pagesToProduceInEachUpdate
-			.Except(pagesToProduceAccordingToRules)
+		var allPagesSortedAccordingToRules = pagesToProduceInEachUpdate
 			.Select(pagesToSort =>
 			{
-				var relevantRules = GetRelevantRules(pageOrderingRules, pagesToSort).ToArray();
-				PageComparer pageComparer = new(relevantRules);
+				var relevantRules = pageOrderingRules
+					.Where(pageOrderingRule => pageOrderingRule
+						.All(rule => pagesToSort.Any(page => page == rule)));
 
-				return pagesToSort.Order(pageComparer).ToArray();
+				return pagesToSort
+					.Order(new PageComparer(relevantRules))
+					.ToArray();
 			})
 			.ToArray();
 
-
 		return (
-			correct: pagesToProduceAccordingToRules.Sum(result => result[result.Length / 2]),
-			incorrect: pagesNotAccordingToRules.Sum(result => result[result.Length / 2]));
-	}
-
-	private static bool AllAccordingToRules(
-		int[] pagesToProduce,
-		IEnumerable<IEnumerable<int>> pageOrderingRules)
-	{
-		var enumeratedPagesToProduce = pagesToProduce.ToArray();
-		var relevantRules = GetRelevantRules(pageOrderingRules, enumeratedPagesToProduce).ToArray();
-
-		var allAccordingToRules = enumeratedPagesToProduce
-			.Select((basePage, i) => enumeratedPagesToProduce
-				.Select((pageToCheck, j) =>
-				{
-					if (i == j)
-					{
-						return true;
-					}
-
-					var relevantRule = relevantRules
-						.SingleOrDefault(pageOrderingRule =>
-							pageOrderingRule.All(rule => rule == basePage || rule == pageToCheck))
-						?
-						.ToArray();
-
-					if (relevantRule == null)
-					{
-						return true;
-					}
-
-					var left = relevantRule.First();
-					var right = relevantRule.Last();
-
-					return (i < j && basePage == left && pageToCheck == right)
-						|| (j < i && basePage == right && pageToCheck == left);
-				})
-				.All(isAccordingToRules => isAccordingToRules))
-			.All(areAccordingToRules => areAccordingToRules);
-
-		return allAccordingToRules;
-	}
-
-	private static IEnumerable<IEnumerable<int>> GetRelevantRules(
-		IEnumerable<IEnumerable<int>> pageOrderingRules,
-		int[] pagesToProduce)
-	{
-		return pageOrderingRules
-			.Where(pageOrderingRule => pageOrderingRule
-				.All(rule => pagesToProduce.Any(pageToProduce => pageToProduce == rule)));
+			correct: allPagesSortedAccordingToRules
+				.Where(pagesSortedAccordingToRules => pagesToProduceInEachUpdate.Any(pagesSortedAccordingToRules.SequenceEqual))
+				.Sum(result => result[result.Length / 2]),
+			incorrect: allPagesSortedAccordingToRules
+				.Where(pagesSortedAccordingToRules => !pagesToProduceInEachUpdate.Any(pagesSortedAccordingToRules.SequenceEqual))
+				.Sum(result => result[result.Length / 2]));
 	}
 }

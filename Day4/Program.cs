@@ -12,9 +12,9 @@ public class Program
 
 		string[] rowContent = input.Trim().Split('\n');
 
-		var columns = rowContent[0].Length;
 		var rows = rowContent.Length;
-		var grid = new char[columns, rows];
+		var columns = rowContent[0].Length;
+		var grid = new char[rows, columns];
 
 		for (var y = 0; y < rows; y++)
 		{

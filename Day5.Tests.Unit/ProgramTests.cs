@@ -33,7 +33,7 @@ public class ProgramTests
 		61,13,29
 		97,13,75,29,47
 		""")]
-	public void Test1(string input)
+	public void DetermineCorrectPageOrdering_ShouldReturnCorrectTestResults(string input)
 	{
 		Assert.Equal((correct: 143, incorrect: 123), Program.DetermineCorrectPageOrdering(input));
 	}
